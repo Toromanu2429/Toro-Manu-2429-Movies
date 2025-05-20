@@ -1,103 +1,77 @@
-import Image from "next/image";
+'use client';
+import React, { useEffect, useState } from 'react';
+import { getNowPlayingMovies } from '@/services/movies/getNowPlayingMovies';
+import { getTopRatedMovies } from '@/services/movies/getTopRatedMovies';
+import { getPopularMovies } from '@/services/movies/getPopularMovies';
+import Link from 'next/link';
+import Image from 'next/image';
+import { Swiper, SwiperSlide } from 'swiper/react';
+import { Navigation } from 'swiper/modules';
+import Config from '@/config';
 
-export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+const Home = () => {
+  const [nowPlaying, setNowPlaying] = useState([]);
+  const [topRated, setTopRated] = useState([]);
+  const [popular, setPopular] = useState([]);
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+  useEffect(() => {
+    const fetchAll = async () => {
+      try {
+        const now = await getNowPlayingMovies(1);
+        const top = await getTopRatedMovies(1);
+        const pop = await getPopularMovies(1);
+        setNowPlaying(now.results);
+        setTopRated(top.results);
+        setPopular(pop.results);
+      } catch (err) {
+        console.error('Error loading home data:', err);
+      }
+    };
+
+    fetchAll();
+  }, []);
+
+  const renderSection = (title: string, movies: any[], from: string) => (
+    <div className="mb-10">
+      <h2 className="text-2xl font-bold mb-4">{title}</h2>
+      <Swiper
+        modules={[Navigation]}
+        navigation
+        spaceBetween={20}
+        slidesPerView={2}
+        breakpoints={{
+          640: { slidesPerView: 3 },
+          1024: { slidesPerView: 6 },
+        }}
+      >
+        {movies.map((movie) => (
+          <SwiperSlide key={movie.id}>
+            <Link href={`/movie/${movie.id}?from=${from}`}>
+              <div className="rounded-lg overflow-hidden shadow-md hover:scale-105 transition">
+                <Image
+                  src={Config.IMAGE_SOURCE + movie.poster_path}
+                  alt={movie.title}
+                  width={300}
+                  height={450}
+                  className="object-cover"
+                />
+                <div className="p-2 text-center font-medium">{movie.title}</div>
+              </div>
+            </Link>
+          </SwiperSlide>
+        ))}
+      </Swiper>
     </div>
   );
-}
+
+  return (
+    <div className="max-w-7xl mx-auto px-4 py-8">
+      <h1 className="text-4xl font-bold mb-8 text-center">Welcome to Cineverse 🎥</h1>
+      {renderSection('Now Playing', nowPlaying, 'now-playing')}
+      {renderSection('Top Rated', topRated, 'top-rated')}
+      {renderSection('Popular', popular, 'popular')}
+    </div>
+  );
+};
+
+export default Home;
